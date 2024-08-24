@@ -1,14 +1,81 @@
+#include <cstring>      // For memset()
+#include <sys/socket.h> // For socket functions
+#include <arpa/inet.h>  // For inet_addr() and sockaddr_in
+#include <unistd.h>     // For close()
 #include <iostream>
-#include "socket_handler.hpp"
-
-
 
 /**
- * @brief Constructs a TcpSocket object and initializes the socket.
- * @param WantedServerIp A pointer to a character array representing the server's IP address.
- * 
- * This constructor creates a socket and sets up the server address structure.
+ * @brief Abstract base class for handling TCP socket connections.
  */
+class TcpSocket {
+protected:
+    char buffer[1024] = {0};   ///< Buffer for receiving data
+
+public:
+    /**
+     * @brief Sends data through the socket.
+     * @param message A pointer to a character array containing the message to be sent.
+     */
+    virtual void SendData(char* message) = 0;
+
+    /**
+     * @brief Receives data from the socket.
+     * This function reads data from the socket and stores it in the buffer.
+     */
+    virtual void ReceiveData() = 0;
+
+    /**
+     * @brief Retrieves the buffer containing received data.
+     * @return char* A pointer to the buffer containing data received from the socket.
+     */
+    virtual char* GetBuffer() = 0;
+
+    /**
+     * @brief Virtual destructor for the TcpSocket class.
+     */
+    virtual ~TcpSocket() = default;
+};
+
+/**
+ * @brief TcpClientSocket class for handling TCP client-side connections.
+ */
+class TcpClientSocket : public TcpSocket {
+    int clientSocket;          ///< File descriptor for the client socket
+    sockaddr_in serverAddr;    ///< Structure for server address
+    char* ServerIp;            ///< Pointer to the server IP address
+
+public:
+    TcpClientSocket(char* WantedServerIp);
+
+    void ConnectToServer();
+    void SendData(char* message) override;
+    void ReceiveData() override;
+    char* GetBuffer() override;
+    ~TcpClientSocket();
+};
+
+/**
+ * @brief TcpServerSocket class for handling TCP server-side connections.
+ */
+class TcpServerSocket : public TcpSocket {
+    int serverSocket;              ///< File descriptor for the server socket
+    int clientSocket;              ///< File descriptor for the client socket
+    sockaddr_in serverAddr;        ///< Structure for server address
+    sockaddr_in clientAddr;        ///< Structure for client address
+
+public:
+    TcpServerSocket(int port);
+    void BindSocket();
+    void ListenForConnections(int backlog);
+    int AcceptConnection();
+    void SendData(char* message) override;
+    void ReceiveData() override;
+    char* GetBuffer() override;
+    ~TcpServerSocket();
+};
+
+// TcpClientSocket method implementations
+
 TcpClientSocket::TcpClientSocket(char* WantedServerIp) {
     try {
         clientSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -20,19 +87,11 @@ TcpClientSocket::TcpClientSocket(char* WantedServerIp) {
     }
 
     ServerIp = WantedServerIp;
-    serverAddr.sin_family = AF_INET;          // IPv4
-    serverAddr.sin_port = htons(8080);        // Port number to connect to
-    serverAddr.sin_addr.s_addr = inet_addr(ServerIp); // Server IP address
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(8080);
+    serverAddr.sin_addr.s_addr = inet_addr(ServerIp);
 }
 
-/**
- * @brief Connects the client socket to the server.
- * 
- * Attempts to establish a connection to the server using the provided server address.
- * If the connection fails, an exception is thrown, and the socket is closed.
- * 
- * @throw std::runtime_error If the connection fails.
- */
 void TcpClientSocket::ConnectToServer() {
     try {
         int connectionStatus = connect(clientSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
@@ -44,48 +103,26 @@ void TcpClientSocket::ConnectToServer() {
 
     } catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
-        close(clientSocket); // Close the socket on error
+        close(clientSocket);
     }
 }
 
-/**
- * @brief Sends data to the connected server.
- * 
- * @param message A pointer to a character array containing the message to be sent.
- */
 void TcpClientSocket::SendData(char* message) {
     send(clientSocket, message, strlen(message), 0);
 }
 
-/**
- * @brief Receives data from the connected server.
- * 
- * This function reads data from the server and stores it in the buffer.
- */
 void TcpClientSocket::ReceiveData() {
     ssize_t bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
     buffer[bytesReceived] = '\0'; // Null-terminate the received data
 }
 
-/**
- * @brief Retrieves the buffer containing received data.
- * 
- * @return const char* A pointer to the buffer containing data received from the server.
- */
 char* TcpClientSocket::GetBuffer() {
     return buffer;
 }
 
-/**
- * @brief Destructor for the TcpSocket class.
- * 
- * Closes the client socket when the TcpSocket object is destroyed.
- */
 TcpClientSocket::~TcpClientSocket() {
     close(clientSocket);
 }
-
-
 
 // TcpServerSocket method implementations
 
@@ -161,4 +198,29 @@ char* TcpServerSocket::GetBuffer() {
 TcpServerSocket::~TcpServerSocket() {
     close(clientSocket);
     close(serverSocket);
+}
+
+// Main function
+
+char Ip[] = "192.168.1.6";
+char message[] = "hi";
+int main()
+{
+    // Create a TcpServerSocket object, bind it to a port, and start listening
+    TcpServerSocket server(8080); // Listen on port 8080
+    server.BindSocket();
+    server.ListenForConnections(5); // Set the backlog to 5
+
+    // Accept a client connection
+    int clientSocket = server.AcceptConnection();
+
+    // Receive data from the client
+    server.ReceiveData();
+    std::cout << "Received from client: " << server.GetBuffer() << std::endl;
+
+    // Send a response back to the client
+    char response[] = "Hello, client!";
+    server.SendData(response);
+
+    return 0;
 }
