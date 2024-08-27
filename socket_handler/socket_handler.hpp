@@ -46,7 +46,7 @@ public:
  * @brief TcpClientSocket class for handling TCP client-side connections.
  */
 class TcpClientSocket : public TcpSocket {
-    int clientSocket;          ///< File descriptor for the client socket
+    int clientSocket=-1;          ///< File descriptor for the client socket
     sockaddr_in serverAddr;    ///< Structure for server address
     char* ServerIp;            ///< Pointer to the server IP address
 
@@ -62,6 +62,8 @@ public:
      * @throw std::runtime_error If the connection fails.
      */
     void ConnectToServer();
+
+    bool isConnectionAlive();
 
     /**
      * @brief Sends data to the connected server.
@@ -95,8 +97,8 @@ public:
  * @brief TcpServerSocket class for handling TCP server-side connections.
  */
 class TcpServerSocket : public TcpSocket {
-    int serverSocket;              ///< File descriptor for the server socket
-    int clientSocket;              ///< File descriptor for the client socket
+    int serverSocket=-1;              ///< File descriptor for the server socket
+    int clientSocket=-1;              ///< File descriptor for the client socket
     sockaddr_in serverAddr;        ///< Structure for storing the server's address information
     sockaddr_in clientAddr;        ///< Structure for storing the connected client's address information
 
@@ -127,6 +129,12 @@ public:
      * @throw std::runtime_error If accepting a client connection fails.
      */
     int AcceptConnection();
+
+    /**
+     * @brief Retrieves if the connection is alive.
+     * @return the socket of the connection.
+     */
+    bool isConnectionAlive(int socket);
 
     /**
      * @brief Sends data to the connected client.

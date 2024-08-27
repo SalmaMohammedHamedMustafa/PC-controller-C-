@@ -76,6 +76,28 @@ char* TcpClientSocket::GetBuffer() {
     return buffer;
 }
 
+bool TcpClientSocket::isConnectionAlive() {
+    char buffer;
+    ssize_t result = recv(clientSocket, &buffer, 1, MSG_PEEK);
+
+    if (result > 0) {
+        // Data is available to read, connection is alive
+        return true;
+    } else if (result == 0) {
+        // Connection has been closed by the peer
+        return false;
+    } else {
+        // Error occurred
+        if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            // No data to read right now, but the connection is still alive
+            return true;
+        } else {
+            // Some other error occurred, consider the connection as closed
+            return false;
+        }
+    }
+}
+
 /**
  * @brief Destructor for the TcpSocket class.
  * 
@@ -159,6 +181,31 @@ char* TcpServerSocket::GetBuffer() {
 }
 
 TcpServerSocket::~TcpServerSocket() {
+    shutdown(serverSocket, SHUT_RDWR);
+    shutdown(clientSocket, SHUT_RDWR);
     close(clientSocket);
     close(serverSocket);
+}
+
+
+bool TcpServerSocket::isConnectionAlive(int socket) {
+    char buffer;
+    ssize_t result = recv(socket, &buffer, 1, MSG_PEEK);
+
+    if (result > 0) {
+        // Data is available to read, connection is alive
+        return true;
+    } else if (result == 0) {
+        // Connection has been closed by the peer
+        return false;
+    } else {
+        // Error occurred
+        if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            // No data to read right now, but the connection is still alive
+            return true;
+        } else {
+            // Some other error occurred, consider the connection as closed
+            return false;
+        }
+    }
 }

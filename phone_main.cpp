@@ -1,4 +1,5 @@
 #include <cstring>      // For memset()
+#include <string>
 #include <sys/socket.h> // For socket functions
 #include <arpa/inet.h>  // For inet_addr() and sockaddr_in
 #include <unistd.h>     // For close()
@@ -46,6 +47,9 @@ class TcpClientSocket : public TcpSocket {
 
 public:
     TcpClientSocket(char* WantedServerIp);
+
+    bool isConnectionAlive();
+
 
     void ConnectToServer();
     void SendData(char* message) override;
@@ -104,6 +108,28 @@ void TcpClientSocket::ConnectToServer() {
     } catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
         close(clientSocket);
+    }
+}
+
+bool TcpClientSocket::isConnectionAlive() {
+    char buffer;
+    ssize_t result = recv(clientSocket, &buffer, 1, MSG_PEEK);
+
+    if (result > 0) {
+        // Data is available to read, connection is alive
+        return true;
+    } else if (result == 0) {
+        // Connection has been closed by the peer
+        return false;
+    } else {
+        // Error occurred
+        if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            // No data to read right now, but the connection is still alive
+            return true;
+        } else {
+            // Some other error occurred, consider the connection as closed
+            return false;
+        }
     }
 }
 
@@ -202,25 +228,38 @@ TcpServerSocket::~TcpServerSocket() {
 
 // Main function
 
-char Ip[] = "192.168.1.6";
-char message[] = "hi";
-int main()
-{
-    // Create a TcpServerSocket object, bind it to a port, and start listening
-    TcpServerSocket server(8080); // Listen on port 8080
-    server.BindSocket();
-    server.ListenForConnections(5); // Set the backlog to 5
 
-    // Accept a client connection
-    int clientSocket = server.AcceptConnection();
 
-    // Receive data from the client
-    server.ReceiveData();
-    std::cout << "Received from client: " << server.GetBuffer() << std::endl;
+#include <iostream>
 
-    // Send a response back to the client
-    char response[] = "Hello, client!";
-    server.SendData(response);
+int main() {
+    // Create a TcpClientSocket object and connect to the server
+    char serverIp[] = "192.168.1.5"; // Replace with the actual server IP address
+    TcpClientSocket client(serverIp);
+    client.ConnectToServer();
+    // Main loop for continuously sending user input to the server
+    while (true) {
+        // Get user input
+        std::string userInput;
+        std::cout << "Enter a message to send to the server: ";
+        std::getline(std::cin, userInput);
+        std::cin.clear();
+        // Check if the user wants to exit
+        if (userInput == "exit") {
+            break; // Exit the loop and close the program
+        }
+
+        // Send the user input to the server
+        char* message = new char[userInput.size() + 1]; // Allocate a new buffer
+        std::strcpy(message, userInput.c_str());
+        client.SendData(message);
+        delete[] message; // Don't forget to free the memory
+        std::cout<<"sent\n";
+        // Receive a response from the server
+        client.ReceiveData();
+        std::cout << "Received from server: " << client.GetBuffer() << std::endl;
+        std::cout<<"reccieved\n";
+    }
 
     return 0;
 }
