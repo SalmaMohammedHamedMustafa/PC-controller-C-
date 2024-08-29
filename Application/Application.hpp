@@ -10,7 +10,7 @@ enum class ConnectionState {
 class Application {
     public:
     /*
-    @description: Handles the client connection and manages the client-server communication.
+    @brief: Handles the client connection and manages the client-server communication.
     @param server: A reference to the TcpServerSocket object.
     */
         void handleClient(TcpServerSocket& server);
@@ -18,19 +18,19 @@ class Application {
         int clientSocket;
         FireLink fireLink;
         /*
-        @description: Handles the client connection and manages the client-server communication.
+        @brief: Handles the client connection and manages the client-server communication.
         @param server: A reference to the TcpServerSocket object.
         @return ConnectionState: The state of the connection.
         */
         ConnectionState HandleClientConnection(TcpServerSocket& server);
         /*
-        @description: Parses the client request to extract the message body.
+        @brief: Parses the client request to extract the message body.
         @param request: The client request string.
         @return std::string: The message body extracted from the request.
         */
         std::string ParseRequest(const std::string& request);
         /*
-        @description: Manages the FireLink command to open a specific website in the browser.
+        @brief: Manages the FireLink command to open a specific website in the browser.
         @param website: The website to open.
         @return std::string: The response message to send back to the client.
         */

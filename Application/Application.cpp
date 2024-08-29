@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 
+
 void Application::handleClient(TcpServerSocket& server) {
     ConnectionState state = ConnectionState::RUNNING;
 
