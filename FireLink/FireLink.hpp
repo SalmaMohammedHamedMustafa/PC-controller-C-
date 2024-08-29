@@ -9,10 +9,10 @@ public:
     void firefox(const std::string& url);
 
 
-    std::string facebook_link;
-    std::string google_link;
-    std::string youtube_link;
-    std::string twitter_link;
+    std::string facebook;
+    std::string google;
+    std::string youtube;
+    std::string twitter;
 };
 
 #endif // FIRELINK_HPP

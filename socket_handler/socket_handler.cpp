@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include "socket_handler.hpp"
 
@@ -17,6 +18,7 @@ TcpClientSocket::TcpClientSocket(char* WantedServerIp) {
         }
     } catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
+        std::exit(1);
     }
 
     ServerIp = WantedServerIp;
@@ -45,6 +47,7 @@ void TcpClientSocket::ConnectToServer() {
     } catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
         close(clientSocket); // Close the socket on error
+        std::exit(1);
     }
 }
 
@@ -119,6 +122,7 @@ TcpServerSocket::TcpServerSocket(int port) {
         }
     } catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
+        std::exit(1);
     }
 
     serverAddr.sin_family = AF_INET;
@@ -135,6 +139,7 @@ void TcpServerSocket::BindSocket() {
     } catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
         close(serverSocket);
+        std::exit(1);
     }
 }
 
@@ -162,7 +167,6 @@ int TcpServerSocket::AcceptConnection() {
         return clientSocket;
     } catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
-        close(serverSocket);
         return -1;
     }
 }
