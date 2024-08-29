@@ -1,10 +1,7 @@
-#include <iostream>
-#include <string>
 #include <cstring>
 #include <unistd.h>  // For close(), sleep()
 #include <arpa/inet.h>  // For socket functions
 #include "socket_handler/socket_handler.hpp"
-#include "FireLink/FireLink.hpp"
 #include "Application/Application.hpp"
 
 
