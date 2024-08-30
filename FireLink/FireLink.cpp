@@ -23,7 +23,7 @@ void FireLink::firefox(const std::string& url) {
         std::system(openCommand.c_str());
 
         // Bring the browser window to the front using xdotool
-        std::string activateCommand = "xdotool search --name \"Firefox Web Browser\" windowactivate";  //not working
+        std::string activateCommand = "xdotool search --name \"Firefox Web Browser\" windowactivate"; 
         std::system(activateCommand.c_str());
     #else
         #error Unsupported platform

@@ -51,6 +51,11 @@ ConnectionState Application::HandleClientConnection(TcpServerSocket& server) {
             std::string url = clientMessage.substr(8);
             response = ManageFireLink(url);
         }
+        else if (clientMessage.find("deviceStatus")==0) {
+            std::string status = clientMessage.substr(12);
+            response = ManageDeviceStatus(status);
+            std::cout << response << std::endl;
+        }
         else {
             response = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nContent-Length: 15\r\n\r\nUnknown command.";
         }
@@ -88,4 +93,23 @@ std::string Application::ManageFireLink(const std::string& website) {
     } else {
         return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nUnknown website.";
     }
+}
+
+// Application method to manage device status
+std::string Application::ManageDeviceStatus(const std::string& status) {
+    std::string responseBody;
+
+    if (status == "battery") {
+        responseBody = deviceStatus.GetBatteryPercentage();
+    } else if (status == "cpu") {
+        responseBody = deviceStatus.GetCPUUsage();
+    } else if (status == "ram") {
+        responseBody = deviceStatus.GetRAMUsage();
+    } else if (status == "disk") {
+        responseBody = deviceStatus.GetDiskUsage();
+    } else {
+        responseBody = "Unknown status.";
+    }
+
+    return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(responseBody.length()) + "\r\n\r\n" + responseBody;
 }
