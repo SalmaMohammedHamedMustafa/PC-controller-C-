@@ -78,6 +78,14 @@ void TcpClientSocket::ReceiveData() {
 char* TcpClientSocket::GetBuffer() {
     return buffer;
 }
+/*
+    * @brief Checks if the connection is still alive.
+    * 
+    * This function checks if the connection is still alive by peeking at the incoming data.
+    * If the connection is still alive, the function returns true; otherwise, it returns false.
+    * 
+    * @return bool True if the connection is alive, false otherwise.
+*/
 
 bool TcpClientSocket::isConnectionAlive() {
     char buffer;
