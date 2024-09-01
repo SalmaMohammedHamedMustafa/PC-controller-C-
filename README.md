@@ -34,6 +34,10 @@ To compile and run this application, you need:
 
    Use a C++ compiler to compile the source files. For example, using `g++`:
 
+   ```bash
+   g++ -o server <source files>
+    ```
+
 3. **Run the Server:**
 
    ```bash
