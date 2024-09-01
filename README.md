@@ -18,8 +18,7 @@ This C++ server application manages TCP socket communications to handle client r
 To compile and run this application, you need:
 
 - A C++ compiler that supports C++11 or later.
-- A Unix-like operating system (Linux, macOS) or Windows with suitable adjustments.
-- Basic understanding of TCP/IP networking and socket programming.
+- A Linux operating system.
 
 ## Installation and Setup
 
