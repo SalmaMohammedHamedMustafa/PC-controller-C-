@@ -3,6 +3,7 @@
 #include <string>
 
 
+
 void Application::handleClient(TcpServerSocket& server) {
     ConnectionState state = ConnectionState::RUNNING;
 
@@ -35,14 +36,17 @@ ConnectionState Application::HandleClientConnection(TcpServerSocket& server) {
     std::cout << "Received from client:\n" << clientRequest << std::endl;
 
 
-    std::string clientMessage = ParseRequest(clientRequest);
+    std::string clientMessage = httpHandeler.ParseRequest(clientRequest);
 
     // Handle different client messages (simple API commands)
+    std::string responseBody;
     std::string response;
         if (clientMessage == "hi") {
-            response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nHello, client!";
+            
+            responseBody = "Hello, client!";
         } else if (clientMessage == "exit") {
-            response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 8\r\n\r\nGoodbye!";
+            responseBody = "Goodbye!";
+            response = httpHandeler.CreateResponse(responseBody);
             server.SendData(const_cast<char*>(response.c_str()));
             return ConnectionState::EXIT_REQUESTED;
         }
@@ -57,41 +61,39 @@ ConnectionState Application::HandleClientConnection(TcpServerSocket& server) {
             std::cout << response << std::endl;
         }
         else {
-            response = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nContent-Length: 15\r\n\r\nUnknown command.";
+            responseBody = "Unknown command.";
         }
-
+        response = httpHandeler.CreateResponse(responseBody);
         server.SendData(const_cast<char*>(response.c_str()));
     
     
     return ConnectionState::RUNNING;
 }
 
-std::string Application::ParseRequest(const std::string& request) {
-    // Find the position of the end of the headers
-    size_t pos = request.find("\r\n\r\n");
-    if (pos != std::string::npos) {
-        // Extract the message body from the request
-        std::string clientMessage = request.substr(pos + 4);
-        return clientMessage;
-    }
-    return "";
-}
+
 
 std::string Application::ManageFireLink(const std::string& website) {
+    std::string responseBody;
     if (website == "facebook") {
         fireLink.firefox(fireLink.facebook);
-        return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nOpen Facebook...";
+        responseBody = "Opening Facebook...";
+        return httpHandeler.CreateResponse(responseBody);
     } else if (website == "google") {
         fireLink.firefox(fireLink.google);
-        return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nOpen Google...";
+        responseBody = "Opening Google...";
+        return httpHandeler.CreateResponse(responseBody);
     } else if (website == "youtube") {
         fireLink.firefox(fireLink.youtube);
-        return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nOpen YouTube...";
-    } else if (website == "twitter") {
+        responseBody = "Opening YouTube...";
+        return httpHandeler.CreateResponse(responseBody);
+        }
+    else if (website == "twitter") {
         fireLink.firefox(fireLink.twitter);
-        return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nOpen Twitter...";
+        responseBody = "Opening Twitter...";
+        return httpHandeler.CreateResponse(responseBody);
     } else {
-        return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nUnknown website.";
+        responseBody = "Unknown website.";
+        return httpHandeler.CreateResponse(responseBody);
     }
 }
 
@@ -111,5 +113,5 @@ std::string Application::ManageDeviceStatus(const std::string& status) {
         responseBody = "Unknown status.";
     }
 
-    return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(responseBody.length()) + "\r\n\r\n" + responseBody;
+    return httpHandeler.CreateResponse(responseBody);
 }
