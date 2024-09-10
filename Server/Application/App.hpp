@@ -1,8 +1,13 @@
+#ifndef APP_HPP
+#define APP_HPP
+
+
 #include "../socket_handler/socket_handler.hpp"
 #include "../FireLink/FireLink.hpp"
 #include "../GetDeviceStatus/GetDeviceStatus.hpp"
 #include "../HTTPHandeler/HTTPHandeler.hpp"
 #include <string>
+#include <map>
 
 enum class ConnectionState {
     RUNNING,
@@ -22,25 +27,30 @@ private:
     FireLink fireLink;
     DeviceStatus deviceStatus;
     HTTPHandeler httpHandeler;
-    /*
-    @brief: Handles the client connection and manages the client-server communication.
-    @param server: A reference to the TcpServerSocket object.
-    @return ConnectionState: The state of the connection.
-    */
-    ConnectionState HandleClientConnection(TcpServerSocket& server);
+    ConnectionState state;
 
-    /*
-    @brief: Manages the FireLink command to open a specific website in the browser.
-    @param website: The website to open.
-    @return std::string: The response message to send back to the client.
-    */
-    std::string ManageFireLink(const std::string& website);
+    std::string callCorrectAPI(const std::string& clientMessage);
 
-    /*
-    @brief: Manages the device status command to get the battery percentage, CPU usage, RAM usage, or disk usage.
-    @param status: The device status to retrieve.
-    @return std::string: The response message to send back to the client.
-    */
-    std::string ManageDeviceStatus(const std::string& status);
+    void handleClientConnection(TcpServerSocket& server);
+
+    std::string manageFireLink(const std::string& website);
+
+    std::string manageDeviceStatus(const std::string& statusType);
+
+    std::string greeteClient(const std::string& clientMessage);
+
+    std::string exitClient(const std::string& clientMessage);
+
+    std::string manageUnknownCommand();
+
+   //map of server commands to functions
+    std::map<std::string, std::string (Application::*)(const std::string&)> serverCommands = {
+        {"hi", &Application::greeteClient},
+        {"exit", &Application::exitClient},
+        {"website", &Application::manageFireLink},
+        {"deviceStatus", &Application::manageDeviceStatus}
+    };
 
 };
+
+#endif // APP_HPP

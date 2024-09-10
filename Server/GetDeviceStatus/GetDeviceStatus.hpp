@@ -1,6 +1,8 @@
+#ifndef GETDEVICESTATUS_HPP
+#define GETDEVICESTATUS_HPP
+
 #include <string>
-
-
+#include <map>
 class DeviceStatus
 {
     private:
@@ -15,12 +17,20 @@ class DeviceStatus
     @param s: The string to trim.
     */
     std::string trim(const std::string& s);
-    std::string BatteryPercentage;
-    std::string CPUUsage;
-    std::string RAMUsage;
-    std::string DiskUsage;
-
+    // map of device status types to functions
+    std::map<std::string, std::string (DeviceStatus::*)()> statusFunctions = {
+        {"battery", &DeviceStatus::GetBatteryPercentage},
+        {"cpu", &DeviceStatus::GetCPUUsage},
+        {"ram", &DeviceStatus::GetRAMUsage},
+        {"disk", &DeviceStatus::GetDiskUsage}
+    };
     public:
+    /*
+    @brief: Get the status of the device.
+    @param status: The status type to retrieve.
+    @return std::string: The status of the device.
+    */
+    std::string GetDeviceStatus(const std::string& status);
     /*
     @brief: Get the battery percentage of the device.
     @return std::string: The battery percentage.
@@ -42,3 +52,5 @@ class DeviceStatus
     */
     std::string GetDiskUsage();
 };
+
+#endif // GETDEVICESTATUS_HPP

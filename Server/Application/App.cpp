@@ -5,7 +5,7 @@
 
 
 void Application::handleClient(TcpServerSocket& server) {
-    ConnectionState state = ConnectionState::RUNNING;
+    state = ConnectionState::RUNNING;
 
     while (state == ConnectionState::RUNNING) {
         // Accept a client connection
@@ -13,11 +13,12 @@ void Application::handleClient(TcpServerSocket& server) {
         
         if (clientSocket < 0) {
             std::cout << "Error accepting client connection" << std::endl;
+            state = ConnectionState::EXIT_REQUESTED;
             break;
         }
 
         while (server.isConnectionAlive(clientSocket)) {
-            state = HandleClientConnection(server);
+            handleClientConnection(server);
 
             if (state == ConnectionState::EXIT_REQUESTED) {
                 break;
@@ -28,90 +29,92 @@ void Application::handleClient(TcpServerSocket& server) {
         close(clientSocket);
     }
 }
+/*
+@brief: Handles the client connection and manages the client-server communication.
+@param server: A reference to the TcpServerSocket object.
+@return ConnectionState: The state of the connection.
+*/
 
-ConnectionState Application::HandleClientConnection(TcpServerSocket& server) {
+void Application::handleClientConnection(TcpServerSocket& server) {
     // Receive data from the client
     server.ReceiveData();
     std::string clientRequest = server.GetBuffer();
     std::cout << "Received from client:\n" << clientRequest << std::endl;
-
-
     std::string clientMessage = httpHandeler.ParseRequest(clientRequest);
-
     // Handle different client messages (simple API commands)
-    std::string responseBody;
     std::string response;
-        if (clientMessage == "hi") {
-            
-            responseBody = "Hello, client!";
-        } else if (clientMessage == "exit") {
-            responseBody = "Goodbye!";
-            response = httpHandeler.CreateResponse(responseBody);
-            server.SendData(const_cast<char*>(response.c_str()));
-            return ConnectionState::EXIT_REQUESTED;
-        }
-        else if (clientMessage.find("website")==0)
-        {
-            std::string url = clientMessage.substr(8);
-            response = ManageFireLink(url);
-        }
-        else if (clientMessage.find("deviceStatus")==0) {
-            std::string status = clientMessage.substr(12);
-            response = ManageDeviceStatus(status);
-            std::cout << response << std::endl;
-        }
-        else {
-            responseBody = "Unknown command.";
-        }
-        response = httpHandeler.CreateResponse(responseBody);
-        server.SendData(const_cast<char*>(response.c_str()));
+    response = callCorrectAPI(clientMessage);
+    server.SendData(const_cast<char*>(response.c_str()));
     
-    
-    return ConnectionState::RUNNING;
+
 }
 
 
-
-std::string Application::ManageFireLink(const std::string& website) {
-    std::string responseBody;
-    if (website == "facebook") {
-        fireLink.firefox(fireLink.facebook);
-        responseBody = "Opening Facebook...";
-        return httpHandeler.CreateResponse(responseBody);
-    } else if (website == "google") {
-        fireLink.firefox(fireLink.google);
-        responseBody = "Opening Google...";
-        return httpHandeler.CreateResponse(responseBody);
-    } else if (website == "youtube") {
-        fireLink.firefox(fireLink.youtube);
-        responseBody = "Opening YouTube...";
-        return httpHandeler.CreateResponse(responseBody);
-        }
-    else if (website == "twitter") {
-        fireLink.firefox(fireLink.twitter);
-        responseBody = "Opening Twitter...";
-        return httpHandeler.CreateResponse(responseBody);
+/*
+@brief: iterates through the serverCommands map to find the correct function to call based on the client message.
+@param clientMessage: The message received from the client.
+@return std::string: The response message to send back to the client.
+*/
+std::string Application::callCorrectAPI(const std::string& clientMessage) {
+    auto it = serverCommands.find(clientMessage);
+    if (it != serverCommands.end()) {
+        return (this->*(it->second))(clientMessage);
     } else {
-        responseBody = "Unknown website.";
-        return httpHandeler.CreateResponse(responseBody);
+        return manageUnknownCommand();
     }
 }
 
-// Application method to manage device status
-std::string Application::ManageDeviceStatus(const std::string& status) {
+
+/*
+@brief: Manages the FireLink command to open a specific website in the browser.
+@param website: The website to open.
+@return std::string: The response message to send back to the client.
+*/
+std::string Application::manageFireLink(const std::string& website) {
     std::string responseBody;
-
-    if (status == "battery") {
-        responseBody = deviceStatus.GetBatteryPercentage();
-    } else if (status == "cpu") {
-        responseBody = deviceStatus.GetCPUUsage();
-    } else if (status == "ram") {
-        responseBody = deviceStatus.GetRAMUsage();
-    } else if (status == "disk") {
-        responseBody = deviceStatus.GetDiskUsage();
-    } else {
-        responseBody = "Unknown status.";
-    }
-
+    responseBody = "Opening " + website;
+    std::cout << responseBody << std::endl;
+    fireLink.firefox(website);
     return httpHandeler.CreateResponse(responseBody);
+}
+
+
+/*
+@brief: Manages the device status command to get the battery percentage, CPU usage, RAM usage, or disk usage.
+@param status: The device status to retrieve.
+@return std::string: The response message to send back to the client.
+*/
+std::string Application::manageDeviceStatus(const std::string& statusType) {
+    std::string responseBody;
+    responseBody = deviceStatus.GetDeviceStatus(statusType);
+    std::cout << responseBody << std::endl;
+    return httpHandeler.CreateResponse(responseBody);
+}
+
+/*
+@brief: Greets the client with a simple message.
+@param clientMessage: The message received from the client.
+@return std::string: The response message to send back to the client.
+*/
+std::string Application::greeteClient(const std::string& clientMessage) {
+    
+    return httpHandeler.CreateResponse("Hello, client!");
+}
+
+/*
+@brief: Exits the client connection.
+@param clientMessage: The message received from the client.
+@return std::string: The response message to send back to the client.
+*/
+std::string Application::exitClient(const std::string& clientMessage) {
+    state = ConnectionState::EXIT_REQUESTED;
+    return httpHandeler.CreateResponse("Goodbye!");
+}
+
+/*
+@brief: Manages an unknown command.
+@return std::string: The response message to send back to the client.
+*/
+std::string Application::manageUnknownCommand() {
+    return httpHandeler.CreateResponse("Unknown command.");
 }

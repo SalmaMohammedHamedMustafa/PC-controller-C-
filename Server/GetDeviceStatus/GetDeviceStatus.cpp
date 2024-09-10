@@ -2,6 +2,16 @@
 #include <array>
 #include <stdexcept>
 #include "GetDeviceStatus.hpp"
+
+// Get the status of the device
+std::string DeviceStatus::GetDeviceStatus(const std::string& status) {
+    auto it = statusFunctions.find(status);
+    if (it != statusFunctions.end()) {
+        return (this->*(it->second))();
+    } else {
+        return "Unknown status.";
+    }
+}
 // Function to execute shell commands
 std::string DeviceStatus::exec(const char* cmd) {
     std::array<char, 128> buffer;
@@ -41,3 +51,4 @@ std::string DeviceStatus::GetDiskUsage() {
     std::string diskUsage = exec("df -h | grep -vE '^Filesystem|tmpfs|cdrom' | awk '{ print $1 \": \" $5 }'");
     return "Disk Usage: " + trim(diskUsage);
 }
+

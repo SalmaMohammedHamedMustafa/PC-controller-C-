@@ -1,14 +1,24 @@
 #include "FireLink.hpp"
 #include <cstdlib>
+#include <string>
 
-FireLink::FireLink() :
-    facebook("https://www.facebook.com"),
-    google("https://www.google.com"),
-    youtube("https://www.youtube.com"),
-    twitter("https://www.twitter.com") {}
+/*
+@brief: Gets the URL of the specified website.
+@param website: The name of the website.
+@return std::string: The URL of the website.
+*/
+std::string FireLink::GetUrl(const std::string& website) {
+    auto it = websites.find(website);
+    if (it != websites.end()) {
+        return it->second;
+    } else {
+        return "https://www.google.com";
+    }
+}
 
-void FireLink::firefox(const std::string& url) {
-    std::string command;
+void FireLink::firefox(const std::string& website) {
+    std::string url = GetUrl(website); // Get the URL of the website
+    std::string command; // Command to open the URL in the browser
 
     #if defined(_WIN32)
         // Windows
