@@ -29,6 +29,8 @@ void Application::handleClient(TcpServerSocket& server) {
         close(clientSocket);
     }
 }
+
+
 /*
 @brief: Handles the client connection and manages the client-server communication.
 @param server: A reference to the TcpServerSocket object.

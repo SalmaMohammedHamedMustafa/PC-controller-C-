@@ -32,6 +32,18 @@ public:
      */
     virtual char* GetBuffer() = 0;
 
+    /*
+    * @brief Receives file data 
+    * @param filePath A pointer to a character array containing the path to the file to be saved.
+    */
+    virtual void ReceiveFileData(const char* filePath)=0;
+
+    /*
+    * @brief Sends file data
+    * @param filePath A pointer to a character array containing the path to the file to be sent.
+    */
+    virtual void SendFileData(const char* filePath)=0;
+
     /**
      * @brief Virtual destructor for the TcpSocket class.
      */
@@ -64,6 +76,10 @@ public:
     void ConnectToServer();
 
     bool isConnectionAlive();
+
+    virtual void ReceiveFileData(const char* filePath) override;
+
+    virtual void SendFileData(const char* filePath) override;
 
     /**
      * @brief Sends data to the connected server.
@@ -136,6 +152,12 @@ public:
      */
     bool isConnectionAlive(int socket);
 
+
+    virtual void ReceiveFileData(const char* filePath) override;
+
+    virtual void SendFileData(const char* filePath) override;
+
+
     /**
      * @brief Sends data to the connected client.
      * @param message A pointer to a character array containing the message to be sent.
@@ -153,6 +175,7 @@ public:
      * @return char* A pointer to the buffer containing data received from the client.
      */
     char* GetBuffer() override;
+
 
     /**
      * @brief Destructor for the TcpServerSocket class.

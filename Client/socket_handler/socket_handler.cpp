@@ -1,5 +1,7 @@
 #include <cstdlib>
 #include <iostream>
+#include <fstream> // For file handling
+#include <cstring> // For strlen
 #include "socket_handler.hpp"
 
 
@@ -107,6 +109,100 @@ bool TcpClientSocket::isConnectionAlive() {
             return false;
         }
     }
+}
+
+void TcpClientSocket::ReceiveFileData(const char* filePath) {
+    std::ofstream file(filePath, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filePath << std::endl;
+        return;
+    }
+
+    // Increase receive buffer size
+    int bufferSize = 65536;  // 64KB
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize));
+
+    char buffer[8192];  // Larger buffer size
+    ssize_t bytesReceived;
+
+    while ((bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) {
+        if (bytesReceived < 0) {
+            std::cerr << "Error receiving data from server!" << std::endl;
+            file.close();
+            return;
+        }
+
+        file.write(buffer, bytesReceived);
+
+        // Send acknowledgment after writing data to the file
+        const char ack = 'A';
+        ssize_t ackSent = send(clientSocket, &ack, sizeof(ack), 0);
+        if (ackSent < 0) {
+            std::cerr << "Error sending acknowledgment to server!" << std::endl;
+            file.close();
+            return;
+        }
+    }
+
+    if (bytesReceived == 0) {
+        std::cout << "File transfer complete!" << std::endl;
+    } else if (bytesReceived < 0) {
+        std::cerr << "Error receiving file data!" << std::endl;
+    }
+
+    file.close();
+}
+
+void TcpClientSocket::SendFileData(const char* filePath) {
+    FILE* file = fopen(filePath, "rb");
+    if (file == nullptr) {
+        std::cerr << "Error opening file: " << filePath << std::endl;
+        return;
+    }
+
+    // Increase send buffer size
+    int bufferSize = 65536;  // 64KB
+    setsockopt(clientSocket, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize));
+
+    char fileBuffer[8192];  // Larger buffer size
+    size_t bytesRead;
+    ssize_t totalBytesSent = 0;
+
+    while ((bytesRead = fread(fileBuffer, 1, sizeof(fileBuffer), file)) > 0) {
+        size_t bytesLeftToSend = bytesRead;
+        const char* bufferPtr = fileBuffer;
+
+        while (bytesLeftToSend > 0) {
+            ssize_t bytesSent = send(clientSocket, bufferPtr, bytesLeftToSend, 0);
+            if (bytesSent < 0) {
+                std::cerr << "Error sending file data to client!" << std::endl;
+                fclose(file);
+                return;
+            }
+
+            bufferPtr += bytesSent;
+            bytesLeftToSend -= bytesSent;
+            totalBytesSent += bytesSent;
+        }
+
+        // Wait for acknowledgment from the client
+        char ackBuffer[2];
+        ssize_t ackReceived = recv(clientSocket, ackBuffer, sizeof(ackBuffer), 0);
+        if (ackReceived <= 0 || ackBuffer[0] != 'A') {
+            std::cerr << "Error receiving acknowledgment from client!" << std::endl;
+            fclose(file);
+            return;
+        }
+    }
+
+    if (feof(file)) {
+        // Print only the final total number of bytes sent
+        std::cout << "File transfer complete! Total bytes sent: " << totalBytesSent << " bytes." << std::endl;
+    } else {
+        std::cerr << "Error reading file!" << std::endl;
+    }
+
+    fclose(file);
 }
 
 /**
@@ -220,4 +316,98 @@ bool TcpServerSocket::isConnectionAlive(int socket) {
             return false;
         }
     }
+}
+
+void TcpServerSocket::SendFileData(const char* filePath) {
+    FILE* file = fopen(filePath, "rb");
+    if (file == nullptr) {
+        std::cerr << "Error opening file: " << filePath << std::endl;
+        return;
+    }
+
+    // Increase send buffer size
+    int bufferSize = 65536;  // 64KB
+    setsockopt(clientSocket, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize));
+
+    char fileBuffer[8192];  // Larger buffer size
+    size_t bytesRead;
+    ssize_t totalBytesSent = 0;
+
+    while ((bytesRead = fread(fileBuffer, 1, sizeof(fileBuffer), file)) > 0) {
+        size_t bytesLeftToSend = bytesRead;
+        const char* bufferPtr = fileBuffer;
+
+        while (bytesLeftToSend > 0) {
+            ssize_t bytesSent = send(clientSocket, bufferPtr, bytesLeftToSend, 0);
+            if (bytesSent < 0) {
+                std::cerr << "Error sending file data to client!" << std::endl;
+                fclose(file);
+                return;
+            }
+
+            bufferPtr += bytesSent;
+            bytesLeftToSend -= bytesSent;
+            totalBytesSent += bytesSent;
+        }
+
+        // Wait for acknowledgment from the client
+        char ackBuffer[2];
+        ssize_t ackReceived = recv(clientSocket, ackBuffer, sizeof(ackBuffer), 0);
+        if (ackReceived <= 0 || ackBuffer[0] != 'A') {
+            std::cerr << "Error receiving acknowledgment from client!" << std::endl;
+            fclose(file);
+            return;
+        }
+    }
+
+    if (feof(file)) {
+        // Print only the final total number of bytes sent
+        std::cout << "File transfer complete! Total bytes sent: " << totalBytesSent << " bytes." << std::endl;
+    } else {
+        std::cerr << "Error reading file!" << std::endl;
+    }
+
+    fclose(file);
+}
+
+void TcpServerSocket::ReceiveFileData(const char* filePath) {
+    std::ofstream file(filePath, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filePath << std::endl;
+        return;
+    }
+
+    // Increase receive buffer size
+    int bufferSize = 65536;  // 64KB
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize));
+
+    char buffer[8192];  // Larger buffer size
+    ssize_t bytesReceived;
+
+    while ((bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) {
+        if (bytesReceived < 0) {
+            std::cerr << "Error receiving data from server!" << std::endl;
+            file.close();
+            return;
+        }
+
+        file.write(buffer, bytesReceived);
+
+        // Send acknowledgment after writing data to the file
+        const char ack = 'A';
+        ssize_t ackSent = send(clientSocket, &ack, sizeof(ack), 0);
+        if (ackSent < 0) {
+            std::cerr << "Error sending acknowledgment to server!" << std::endl;
+            file.close();
+            return;
+        }
+    }
+
+    if (bytesReceived == 0) {
+        std::cout << "File transfer complete!" << std::endl;
+    } else if (bytesReceived < 0) {
+        std::cerr << "Error receiving file data!" << std::endl;
+    }
+
+    file.close();
 }
